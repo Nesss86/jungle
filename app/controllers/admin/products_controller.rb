@@ -1,4 +1,5 @@
 class Admin::ProductsController < ApplicationController
+  before_action :authenticate_admin
 
   def index
     @products = Product.order(id: :desc).all
@@ -19,12 +20,18 @@ class Admin::ProductsController < ApplicationController
   end
 
   def destroy
-    @product = Product.find params[:id]
+    @product = Product.find(params[:id])
     @product.destroy
     redirect_to [:admin, :products], notice: 'Product deleted!'
   end
 
   private
+
+  def authenticate_admin
+    authenticate_or_request_with_http_basic('Admin Area') do |username, password|
+      username == ENV['ADMIN_USERNAME'] && password == ENV['ADMIN_PASSWORD']
+    end
+  end
 
   def product_params
     params.require(:product).permit(
@@ -36,5 +43,5 @@ class Admin::ProductsController < ApplicationController
       :price
     )
   end
-
 end
+
