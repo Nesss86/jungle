@@ -1,13 +1,57 @@
-<section class="orders-show">
-
+<section class="order-details">
   <header class="page-header">
-    <h1>Order #<%= @order.id %></h1>
+    <h1>Order Details</h1>
   </header>
 
-  <div class="order-summary jumbotron">
-    <h4>Thank you for your order!</h4>
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h3>Order Summary</h3>
+    </div>
+    <div class="panel-body">
+      <p><strong>Email:</strong> <%= @order.email %></p>
+      <p><strong>Order Total:</strong> <%= format_price(@order.total_cents) %></p>
+    </div>
   </div>
 
-  <%= link_to "Continue Shopping", root_path, class: 'btn btn-lg btn-primary' %>
-
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h3>Items in Your Order</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Image</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Line Item Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @line_items.each do |item| %>
+            <tr>
+              <td>
+                <%= image_tag item.product.image.thumb.url, class: 'order-item-image' %>
+              </td>
+              <td>
+                <h4><%= item.product.name %></h4>
+                <p><%= item.product.description %></p>
+              </td>
+              <td>
+                <%= item.quantity %>
+              </td>
+              <td>
+                <%= format_price(item.total_price_cents) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </section>
+
+
+
+
+

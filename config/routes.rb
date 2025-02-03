@@ -8,7 +8,10 @@ Rails.application.routes.draw do
   resource :cart, only: [:show] do
     post   :add_item
     post   :remove_item
+    
   end
+
+  post '/create-checkout-session', to: 'checkout#create_session'
 
   resources :orders, only: [:create, :show]
 

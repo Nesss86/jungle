@@ -2,13 +2,14 @@ class OrdersController < ApplicationController
 
   def show
     @order = Order.find(params[:id])
+    @line_items = @order.line_items.includes(:product)
   end
 
   def create
     charge = perform_stripe_charge
-    order  = create_order(charge)
+    order = create_order(charge)
 
-    if order.valid?
+    if order.persisted? # Correctly check for persistence
       empty_cart!
       redirect_to order, notice: 'Your Order has been placed.'
     else
@@ -22,16 +23,16 @@ class OrdersController < ApplicationController
   private
 
   def empty_cart!
-    # empty hash means no products in cart :)
+    Rails.logger.debug "Clearing cart..."
     update_cart({})
   end
 
   def perform_stripe_charge
     Stripe::Charge.create(
-      source:      params[:stripeToken],
-      amount:      cart_subtotal_cents,
-      description: "Khurram Virani's Jungle Order",
-      currency:    'cad'
+      source: params[:stripeToken],
+      amount: cart_subtotal_cents,
+      description: "Jungle Order",
+      currency: 'cad'
     )
   end
 
@@ -39,21 +40,33 @@ class OrdersController < ApplicationController
     order = Order.new(
       email: params[:stripeEmail],
       total_cents: cart_subtotal_cents,
-      stripe_charge_id: stripe_charge.id, # returned by stripe
+      stripe_charge_id: stripe_charge.id
     )
 
+    # Creating line items and associating them with the order
     enhanced_cart.each do |entry|
       product = entry[:product]
       quantity = entry[:quantity]
-      order.line_items.new(
+
+      Rails.logger.debug "Adding line item: Product #{product.name}, Quantity #{quantity}, Price per unit: #{product.price_cents}"
+
+      order.line_items.build( # Build instead of create to associate correctly before saving
         product: product,
         quantity: quantity,
-        item_price: product.price,
-        total_price: product.price * quantity
+        item_price_cents: product.price_cents,
+        total_price_cents: product.price_cents * quantity
       )
     end
-    order.save!
+
+    if order.save
+      Rails.logger.debug "Order #{order.id} created with #{order.line_items.size} line items."
+    else
+      Rails.logger.debug "Failed to create order: #{order.errors.full_messages.join(', ')}"
+    end
+
     order
   end
-
 end
+
+
+
